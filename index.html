@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Prompt Chain Preview</title>
+  <style>
+    body {  font-family: Arial, Helvetica, sans-serif; margin: 24px; background: linear-gradient( to bottom, #150501, #f7fe7b); text-align: center;}
+    textarea { width: 50%; height: 100px; font-size: 14px; }
+    button { margin-top: 8px; padding: 8px 12px; font-size: 14px; cursor: pointer; border-radius: 14px;}
+    .output { margin-top: 16px; padding: 12px; border: 1px solid #dddddd; background: #deded7; text-align: center;}
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+    .label { font-weight: 600; margin-top: 8px; }
+    button{
+
+    }
+  </style>
+</head>
+<body>
+  <h1 style="color: white;">Prompt Chain Preview</h1>
+  <p style="color: white;">Type a customer query below and click <strong>Run</strong> to see the 5-stage outputs produced by <code> </code>.</p>
+
+  <textarea id="query" placeholder="e.g. I was charged $12.99 on 2025-10-01 and I don't recognize it"></textarea>
+  <div>
+    <button id="run">Run</button>
+    <button id="example">Load Example</button>
+  </div>
+
+  <div id="results" class="output" aria-live="polite">
+    <em>No output yet.</em>
+  </div>
+
+  <script src="prompt-chain.js"></script>
+  <script>
+    // Ensure runPromptChain is available
+    function show(msg) {
+      const el = document.getElementById('results');
+      el.innerHTML = msg;
+    }
+
+    document.getElementById('example').addEventListener('click', () => {
+      document.getElementById('query').value = "I see a charge of $45.00 on 2025-10-05 that I did not authorize. Card ending 1234.";
+    });
+
+    document.getElementById('run').addEventListener('click', async () => {
+      const q = document.getElementById('query').value.trim();
+      if (!q) {
+        show('<em>Please enter a query first.</em>');
+        return;
+      }
+      show('<em>Running prompt chain...</em>');
+      try {
+        // runPromptChain should be defined by prompt-chain.js
+        if (typeof runPromptChain !== 'function') {
+          show('<strong>Error:</strong> runPromptChain is not defined. Make sure prompt-chain.js is loaded.');
+          return;
+        }
+        const out = await runPromptChain(q);
+        // out is [intent, candidateCategories(array), chosenCategory, extractedDetails(object), finalReply]
+        const html = [];
+        html.push('<div class="label">1) Interpreted intent</div>');
+        html.push('<pre>' + escapeHtml(String(out[0])) + '</pre>');
+
+        html.push('<div class="label">2) Candidate categories</div>');
+        html.push('<pre>' + escapeHtml(JSON.stringify(out[1], null, 2)) + '</pre>');
+
+        html.push('<div class="label">3) Chosen category</div>');
+        html.push('<pre>' + escapeHtml(String(out[2])) + '</pre>');
+
+        html.push('<div class="label">4) Extracted details</div>');
+        html.push('<pre>' + escapeHtml(JSON.stringify(out[3], null, 2)) + '</pre>');
+
+        html.push('<div class="label">5) Final reply</div>');
+        html.push('<pre>' + escapeHtml(String(out[4])) + '</pre>');
+
+        show(html.join('\n'));
+      } catch (err) {
+        show('<strong>Runtime error:</strong> ' + escapeHtml(String(err)));
+        console.error(err);
+      }
+    });
+
+    function escapeHtml(s) {
+      return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>
