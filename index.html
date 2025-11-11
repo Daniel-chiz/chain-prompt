@@ -3,20 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Prompt Chain Preview</title>
+  <title> Prompt Chain Preview</title>
   <style>
-    body {  font-family: Arial, Helvetica, sans-serif; margin: 24px; background: linear-gradient( to bottom, #150501, #f7fe7b); text-align: center;}
-    textarea { width: 50%; height: 100px; font-size: 14px; }
-    button { margin-top: 8px; padding: 8px 12px; font-size: 14px; cursor: pointer; border-radius: 14px;}
-    .output { margin-top: 16px; padding: 12px; border: 1px solid #dddddd; background: #deded7; text-align: center;}
+    body {  font-family: Arial, Helvetica, sans-serif; margin: 24px; background: linear-gradient( to bottom, #71615d, #f7fe7b); text-align: center;}
+    textarea { width: 50%; height: 100px; font-size: 14px; border-radius: 8px; }
+    button { margin-top: 8px; padding: 8px 12px; font-size: 14px; cursor: pointer; border-radius: 8px;}
+    button:hover { background-color: #d0c7c7; 
+    .output { margin-top: 16px; padding: 12px; border: 1px solid #dddddd; background: #deded7; text-align: center; max-width: 80%; margin-left: auto; margin-right: auto; border-radius: 8px; }
     pre { white-space: pre-wrap; word-wrap: break-word; }
     .label { font-weight: 600; margin-top: 8px; }
     
   </style>
 </head>
 <body>
-  <h1 style="color: white;">Prompt Chain Preview</h1>
-  <p style="color: white;">Type a customer query below and click <strong>Run</strong> to see the 5-stage outputs produced by <code> </code>.</p>
+  <h1 style="color: white;"> Prompt Chain Preview</h1>
+  <p style="color: white;"> Kindly type in a customer query below and click <strong>Run</strong>.</p>
 
   <textarea id="query" placeholder="e.g. I was charged $12.99 on 2025-10-01 and I don't recognize it"></textarea>
   <div>
@@ -30,7 +31,7 @@
 
   <script src="prompt-chain.js"></script>
   <script>
-    // Ensure runPromptChain is available
+    
     function show(msg) {
       const el = document.getElementById('results');
       el.innerHTML = msg;
@@ -48,13 +49,13 @@
       }
       show('<em>Running prompt chain...</em>');
       try {
-        // runPromptChain should be defined by prompt-chain.js
+        
+
         if (typeof runPromptChain !== 'function') {
           show('<strong>Error:</strong> runPromptChain is not defined. Make sure prompt-chain.js is loaded.');
           return;
         }
         const out = await runPromptChain(q);
-        // out is [intent, candidateCategories(array), chosenCategory, extractedDetails(object), finalReply]
         const html = [];
         html.push('<div class="label">1) Interpreted intent</div>');
         html.push('<pre>' + escapeHtml(String(out[0])) + '</pre>');

@@ -1,7 +1,3 @@
-// prompt-chain.js
-// runPromptChain(query) -> returns Promise resolving to array of 5 intermediate outputs:
-// [interpretedIntent, candidateCategories, chosenCategory, extractedDetails, finalReply]
-
 const CATEGORIES = [
   "Account Opening",
   "Billing Issue",
@@ -13,7 +9,7 @@ const CATEGORIES = [
   "General Information",
 ];
 
-// simple keyword map for candidate mapping (heuristic)
+// keyword map for candidate mapping
 const KEYWORDS = {
   "Account Opening": ["open account", "new account", "open a checking", "apply account", "signup"],
   "Billing Issue": ["charge", "bill", "billing", "invoice", "overcharged", "refund"],
@@ -25,7 +21,7 @@ const KEYWORDS = {
   "General Information": ["hours", "location", "branch", "interest", "contact", "information"],
 };
 
-// details to extract per category
+// details to extract according to category
 const DETAILS_BY_CATEGORY = {
   "Transaction Inquiry": ["transaction_date (Required)", "amount (Required)", "merchant (Optional)", "card_last4 (Optional)"],
   "Card Services": ["card_last4 (Required)", "date_lost_or_stolen (Optional)"],
@@ -37,19 +33,13 @@ const DETAILS_BY_CATEGORY = {
   "General Information": [],
 };
 
-// helper to normalize text
 function norm(s) {
   return (s || "").toLowerCase();
 }
 
-// Step 1: Interpret intent (simple heuristics + rewriting)
 function interpretIntent(query) {
   const q = query.trim();
-  // Shorten and distill: find the main verb phrase by looking for keywords
-  // Heuristic: if contains "how", "why", "when", treat as question; else as report/request.
   const lower = q.toLowerCase();
-  // try to extract noun/verb phrases using simple patterns
-  // fallback: first sentence trimmed
   const firstSentence = q.split(/[.?!\n]/)[0];
   let intent;
   if (/how|why|when|what|can i|could i|do i|is it|are you|please/i.test(lower)) {
@@ -75,7 +65,7 @@ function mapToCategories(query, maxCandidates = 3) {
       }
     }
   }
-  // Also add fuzzy matches: check for numbers/amounts => favor Transaction or Billing
+  // Check for numbers/amounts => favor Transaction or Billing
   if (/\$\s*\d+|\d+\.\d{2}/.test(q) || /\b(amount|charged|charge|refund)\b/.test(q)) {
     scores.set("Transaction Inquiry", scores.get("Transaction Inquiry") + 1);
     scores.set("Billing Issue", scores.get("Billing Issue") + 1);
@@ -83,7 +73,7 @@ function mapToCategories(query, maxCandidates = 3) {
   if (/\b(password|login|sign in|locked|unlock|2fa|two[- ]factor)\b/.test(q)) {
     scores.set("Account Access", scores.get("Account Access") + 2);
   }
-  // Build sorted list
+  // Build for sorted list
   const sorted = [...scores.entries()].sort((a, b) => b[1] - a[1]);
   // Filter zeros out
   const filtered = sorted.filter(([, sc]) => sc > 0);
@@ -95,13 +85,13 @@ function mapToCategories(query, maxCandidates = 3) {
   return candidates;
 }
 
-// Step 3: Choose best category (prefer highest score; tie-breaker heuristics)
+// Step 3: Choose best category 
 function chooseCategory(candidates, query) {
   if (!candidates || candidates.length === 0) return { category: "General Information", reason: "fallback" };
   // sort by score desc
   candidates.sort((a, b) => b.score - a.score);
   const top = candidates[0];
-  // tie-breaker: if both Transaction and Card Services present and "card" in query, choose Card Services
+  //  if both Transaction and Card Services present and "card" in query, choose Card Services
   const q = norm(query);
   if (candidates.length > 1) {
     const names = candidates.map(c => c.category);
@@ -115,7 +105,7 @@ function chooseCategory(candidates, query) {
   return { category: top.category, reason: top.reason };
 }
 
-// Step 4: Extract additional details (heuristic extraction)
+// Step 4: Extract additional details 
 function extractDetails(query, chosenCategory) {
   const detailsTemplate = DETAILS_BY_CATEGORY[chosenCategory] || [];
   const extracted = { required: [], optional: [] };
@@ -124,10 +114,9 @@ function extractDetails(query, chosenCategory) {
   // detect amounts
   const amountMatch = q.match(/\$\s*[\d,]+(?:\.\d{2})?|\b\d+\.\d{2}\b/);
   if (amountMatch) {
-    // normalize
     extracted.required.push(`amount: ${amountMatch[0]}`);
   }
-  // detect date (simple patterns)
+  // detect date
   const dateMatch = q.match(/\b(?:\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4}|[A-Za-z]{3,9} \d{1,2}(?:,\s*\d{4})?)\b/);
   if (dateMatch) {
     extracted.required.push(`transaction_date: ${dateMatch[0]}`);
@@ -220,7 +209,7 @@ function generateReply(query, chosenCategory, details) {
   }
 }
 
-// Main function to run the prompt chain
+// function to run the prompt chain
 async function runPromptChain(customerQuery) {
   if (typeof customerQuery !== "string") {
     throw new Error("customerQuery must be a string");
